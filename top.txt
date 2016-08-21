@@ -1,0 +1,56 @@
+- Introduction
+- Low Level system Information
+  - Machine Interface
+    - Processor Architecture
+    - Data Representation
+    - Byte Ordering
+      Little endian
+    - Fundamental Types
+      * LP64 model on RISCV64G
+      * Add notes on vector extentions
+      * How about quad-precisions??
+     - Aggregates and Unios
+     - Bit-fields
+   - Function Calling Sequence
+     * Refer to chap18 of user mode isa spec.
+     - Registers
+     - The Stack Frame
+     - Parameter Passing
+     - Return Values
+   - System Call Sequecne
+     * Its better to define clear spec on system call sequence and register conventions.
+   - Process Initialization
+     - Registers
+     - Process Stack
+       - Initial state
+   - Thread Initialization
+     * Ite bstter to define clear spec on the initial context of the thread.
+     - Registers
+     - Process Stack
+   - Memory Model
+     * Check if reloc defs are ready to support medial/large model of AMD64.
+     * Check if kernel memory model like AMD64 is supporpted or not.
+- Object Files
+  - ELF Header
+    * RM_RISCV is 243. Check if this is officially registed value.
+  - Speciao Sections
+    * Recent toolchain seems to embed codegen info to a special section. Search the spec.
+  - TOC
+  - Symbol Table
+    Symbol Values
+  - Relocations
+    * see relocations.txt in this dir.
+- Program Loading and Dynamic Linking
+  - Program Loading
+    - Program Interpreter
+  - Dynamic Linking
+    - Dynamic Section
+    - Global Offset Table
+    - Procedure Linkage Table
+  - TLS
+    - base model
+      * RISCV64 complies VariantII model.
+    - RTLD initialization
+- Libraries
+  * Should we describe search path?
+- Appendex
