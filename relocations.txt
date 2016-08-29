@@ -1,75 +1,117 @@
 # Documented from bfd/elfxx-risv.c and include/elf/riscv.h in gnu binutils source tree.
 ---
 # RELOC_NOTE_1: dpends on XLEN.
+- legent in expr field
+  - A: Addend to compute the value of the relocatable field.
+  - B: The base address of the shared object. (Same as lower segment address of text segment.)
+  - G: Offset to the global offset table.
+  - GOT: address of global offset table.
+  - L: Address of an entry in procedure linkage table.
+  - P: Address of relocated storage by the relocation.
+  - S: Address or value of the sybol
+  - T: Offset from the TLS segment base address to the thread local storage object.
+  - TB: The base address of the TLS block.
+  - TP: The value of TP register.
+  - Z: size of the symbol
+  - HA(X, Y) Bit field [XLEN -1:Y] of the value X, that is adjusted by the sing extension at the bitfield [Y-1:0] of the value X.
+  - LO(X, Y) Bit field [Y:0] of the vlaue X.
+---
 - &R_RISCV_NONE
   enum: 0
+  brief: Not in use.
 
 - &R_RISCV_32
   enum: 1
   brief: 32bit absolute address.
+  note: Generated it against a entry in .got/.plt
   size: 4
   align: 4
+  expr: S + A
+  dyld: true
 
 - &R_RISCV_64
   enum: 2
-  brief: 64bit absolute address. 
+  brief: 64bit absolute address.
+  note: Generated it against a entry in .got/.plt
   size: 8
   align: 8
+  expr: S + A
+  dyld: true
 
 - &R_RISCV_RELATIVE
   enum: 3
-  brief: relocation againt a local symbol in a shared object 32bit.
+  brief: Relocation againt a local symbol in a shared object.
+  note: Generated it against refs to static variable (or whose visibility is hidden?).
   size: see RELOC_NOTE_1
   align: see RELOC_NOTE_1
+  expr: (S + A) - P
+  dyld: true
 
 - &R_RISCV_COPY
   enum: 4
   brief: copying data defined in shared object into executable file.
   size: see RELOC_NOTE_1
   align: see RELOC_NOTE_1
+  note: A special relocation. This is used to copy object bit image from the shared object that defines the symbol to the storage reserved in the segment in the executable file image. Only the dynamic linker proeesses this type of relocations.
+  dyld: true
 
 - &R_RISCV_JUMP_SLOT
   enum: 5
   brief: target address call or jump instruction. The size of relocation is depend of the target architecture.
   size: see RELOC_NOTE_1
   align: see RELOC_NOTE_1
+  expr: S
+  dyld: true
 
 - &R_RISCV_TLS_DTPMOD32
   enum: 6
   brief: the module id dynamically allocated by the rtld stored in got. 32bit width, 4byte alignment.
   size: 4
   align: 4
+  note: The number is determined by the dynamic linker. See also the TLS runtime section.
+  dyld: true
 
 - &R_RISCV_TLS_DTPMOD64
   enum: 7
   brief: Same as RISCV_TLS_DTPMOD32 except the size and alingment of relocated area. 64bit width, 8byte alignment.
   size: 8
   align: 8
+  note: Same as R_RISCV_TLS_DTPMOD32
+  dyld: true
 
 - &R_RISCV_TLS_DTPREL32
   enum: 8
   brief: 32bit offset from the tls block base to the variable, stoed in the got.
   size: 4
   align: 4
-
+  expr: T
+  expr: (TB + T) - TP + A
+  dyld: true
+  
 - &R_RISCV_TLS_DTPREL64
   enum: 9
   brief: Same as R_RISCV_TLS_DTPREL32 execpt the bit width of the value
   size: 8
   align: 8
+  expr: (TB + T) - TP + A
+  dyld: true
 
 - &R_RISCV_TLS_TPREL32
   enum: 10
   brief: offset from value of TP register to variable, stored in the got.
   size: 4
   align: 4
+  expr: (TB + T) - TP + A
+  dyld: false
   
 - &R_RISCV_TLS_TPREL64
   enum: 11
   brief: offset from value of TP register to variable, stored in the got.
   size: 8
   align: 8
-
+  expr: (TB + T) - TP + A
+  dyld: false
+  
 # 12-15 is reserved for fuew usage
 
 - &R_RISCV_BRANCH
@@ -77,92 +119,121 @@
   brief: PC-relative branch offset. 12bit signed integer.
   size: 4
   align: 4
+  expr: S - P + A
+  dyld: false
 
 - &R_RISCV_JAL
   enum: 17
   brief: PC-relatie jump offset. 20bit signed integer.
+  dyld: false
 
 - &R_RISCV_CALL
   enum: 18
   brief: PC-relatice function call. Must be applied to the sequence of AUIPC and JALR.
   size: 8
   align: 4
+  expr: S - P + A
+  dyld: false
 
 - &R_RISCV_CALL_PLT
   enum: 19
-  brief: Similar to aboe, but the target is an entry to the plt.
+  brief: PC-relative to the entry in the .plt.
+  expr: (P - GOT) + G + A ???
+  dyld: false
 
 - &R_RISCV_GOT_HI20
   enum: 20
   brief: higher adjusted 20-bit of 32bit offset to a got entry
   size: 8
   align: 4
+  expr: HA((GOT-P + G + A),20)
+  dyld: false
 
 - &R_RISCV_TLS_GOT_HI20
   enum: 21
   brief: Similar to above, but offset to TLS IE entry in got.
   size: 4
   align: 4
+  dyld: false
 
 - &R_RISCV_GD_HI20
   enum: 22
   brief: Similar to above, but offset to TLS GD entry in got.
   size: 4
   align: 4
+  dyld: ???
 
 - &R_RISCV_PCREL_HI20
   enum: 23
   brief: higher adjusted 20bit of 32bit PC-relatice value
   size: 4
   align: 4
+  expr: HA(S - P + A, 20)
+  dyld: false
 
 - &R_RISCV_PCREL_LO12_I
   enum: 24
   brief: Lower 12bit of 32bit PC-relative value
   size: 4
   align: 4
+  expr: LO(S - P + A, 11)
+  dyld: false
 
 - &R_RISCV_PCREL_LO12_S
   enum: 25
   brief: Lower 12bit of 32bit PC-relative value. Only used for imm in store instruction.
   size: 4
   align: 4
+  expr: LO(S - P + A, 11)
+  dyld: false
 
 - &R_RISCV_HI20
   enum: 26
   brief: Higher adjusted 20bit of 32bit absolute address.
   size: 4
   align: 4
+  expr: HA(S + A, 20)
+  dyld: false
 
 - &R_RISCV_LO12_I
   enum: 27
   brief: Lower 12bit of 32bit absolute address
   size: 4
   align: 4
+  expr: LO(S + A, 11)
+  dyld: false
 
 - &R_RISCV_LO12_S
   enum: 28
   brief: Lower 12bit of 32bit absolute address. Only used for imm in store instruction.
   size: 4
   align: 4
+  expr: LO(S + A, 11)
+  dyld: false
 
 - &R_RISCV_TPREL_HI20
   enum: 29
   brief: Higher adjusted 20bit of 32bit offset from the value of TP register.
   size: 4
   align: 4
+  expr: HA(T + TB - P * A, 20)
+  dyld: false
 
 - &R_RISCV_TPREL_LO12_I
   enum: 30
   brief: Lower 12bit of 32bit offset from the value of TP register.
   size: 4
   align: 4
+  expr: LO(T + TB - P * A, 11)
+  dyld: false
     
 - &R_RISCV_TPREL_LO12_S
   enum: 31
   brief: Lower 12bit of 32bit offset from the value of TP register. Only used for imm in store instruction.
   size: 4
   align: 4
+  expr: LO(T + TB - P * A, 11)
+  dyld: false
 
 - &R_RISCV_TPREL_ADD
   enum: 32
