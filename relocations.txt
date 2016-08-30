@@ -9,6 +9,7 @@
   - L: Address of an entry in procedure linkage table.
   - P: Address of relocated storage by the relocation.
   - S: Address or value of the sybol
+  - D: The module index of the shared library defining the symbol.
   - T: Offset from the TLS segment base address to the thread local storage object.
   - TB: The base address of the TLS block.
   - TP: The value of TP register.
@@ -68,6 +69,7 @@
   brief: the module id dynamically allocated by the rtld stored in got. 32bit width, 4byte alignment.
   size: 4
   align: 4
+  expr: D
   note: The number is determined by the dynamic linker. See also the TLS runtime section.
   dyld: true
 
@@ -76,6 +78,7 @@
   brief: Same as RISCV_TLS_DTPMOD32 except the size and alingment of relocated area. 64bit width, 8byte alignment.
   size: 8
   align: 8
+  expr: D
   note: Same as R_RISCV_TLS_DTPMOD32
   dyld: true
 
@@ -84,8 +87,7 @@
   brief: 32bit offset from the tls block base to the variable, stoed in the got.
   size: 4
   align: 4
-  expr: T
-  expr: (TB + T) - TP + A
+  expr: (TB + T) - TP + A # adjustment by A is required??
   dyld: true
   
 - &R_RISCV_TLS_DTPREL64
@@ -93,12 +95,12 @@
   brief: Same as R_RISCV_TLS_DTPREL32 execpt the bit width of the value
   size: 8
   align: 8
-  expr: (TB + T) - TP + A
+  expr: (TB + T) - TP + A # adjustment by A is required??
   dyld: true
 
 - &R_RISCV_TLS_TPREL32
   enum: 10
-  brief: offset from value of TP register to variable, stored in the got.
+  brief: offset from value of TP register to variable, stored in the got entry.
   size: 4
   align: 4
   expr: (TB + T) - TP + A
@@ -106,7 +108,7 @@
   
 - &R_RISCV_TLS_TPREL64
   enum: 11
-  brief: offset from value of TP register to variable, stored in the got.
+  brief: offset from value of TP register to variable, stored in the got entry.
   size: 8
   align: 8
   expr: (TB + T) - TP + A
