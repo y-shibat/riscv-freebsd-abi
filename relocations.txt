@@ -5,7 +5,8 @@
   - A: Addend to compute the value of the relocatable field.
   - B: The base address of the shared object. (Same as lower segment address of text segment.)
   - G: Offset to the global offset table.
-  - GOT: address of global offset table.
+  - GOT: address of global offset table
+  - PLT: address of .plt section
   - L: Address of an entry in procedure linkage table.
   - P: Address of relocated storage by the relocation.
   - S: Address or value of the sybol
@@ -16,6 +17,80 @@
   - Z: size of the symbol
   - HA(X, Y) Bit field [XLEN -1:Y] of the value X, that is adjusted by the sing extension at the bitfield [Y-1:0] of the value X.
   - LO(X, Y) Bit field [Y:0] of the vlaue X.
+
+
+---
+- Figure:
+  - title: template of picture to explain legents for relocation defs.
+  - asciiart: "
+
++----------------+
+|ELF header      |
++----------------+
+|.hash           |
++----------------+
+|.dynsym         |
++----------------+
+|.dynstr         |
++----------------+
+|.gnu.version    |
++----------------+
+|.gnu_version.d  |
++----------------+
+|.rela.dyn       |
++----------------+
+|.rela.plt       |
++----------------+
+|.init           |
++----------------+<--- PLT
+| .plt           |
++----------------+
+| .text          |
+|                |
++- -- -- -- -- --+<--- P
+|                |
++- -- -- -- -- --+
+|                |
+|                |
++----------------+
+|.fini           |
++----------------+
+|.rodata         |
++----------------+
+|.eh_frame_hdr   |
++----------------+
+|.eh_frame       |
++----------------+
+:                :
++----------------+
+|.tdata          |
++----------------+- - - - - - - - - >  +----------------+<--- TB
+|.tbss           |                     | TLS block      | :
++----------------+                     :                : :
+|.init_array     |                     :                : T
++----------------+                     :                : :
+|.fini_array     |                     :                : :
++----------------+                     +----------------+----
+|.ctors          |                     | A obj in TLS   |
++----------------+                     +----------------+
+|.dtors          |                     :                :
++----------------+                     +----------------+ <--- TP
+|.jcr            |                     | TCB            |
++----------------+                     +----------------+
+|.data.rel.ro    |
++----------------+
+|.dynamic        |
++----------------+
+|.data           |
++----------------+
+|.got            |
++----------------+
+|.bss            |
++----------------+
+
+
+
+
 ---
 - &R_RISCV_NONE
   enum: 0
@@ -89,7 +164,7 @@
   align: 4
   expr: (TB + T) - TP + A # adjustment by A is required??
   dyld: true
-  
+
 - &R_RISCV_TLS_DTPREL64
   enum: 9
   brief: Same as R_RISCV_TLS_DTPREL32 execpt the bit width of the value
@@ -105,7 +180,7 @@
   align: 4
   expr: (TB + T) - TP + A
   dyld: false
-  
+
 - &R_RISCV_TLS_TPREL64
   enum: 11
   brief: offset from value of TP register to variable, stored in the got entry.
@@ -113,7 +188,7 @@
   align: 8
   expr: (TB + T) - TP + A
   dyld: false
-  
+
 # 12-15 is reserved for fuew usage
 
 - &R_RISCV_BRANCH
@@ -127,6 +202,9 @@
 - &R_RISCV_JAL
   enum: 17
   brief: PC-relatie jump offset. 20bit signed integer.
+  size: 4
+  align: 4
+  expr: S - P + A
   dyld: false
 
 - &R_RISCV_CALL
@@ -139,8 +217,10 @@
 
 - &R_RISCV_CALL_PLT
   enum: 19
-  brief: PC-relative to the entry in the .plt.
-  expr: (P - GOT) + G + A ???
+  brief: PC-relative to the entry in the .plt. Must be applied to the sequence of AUIPC and JALR.
+  size: 8
+  align: 4
+  expr: (P - PLT) + G + A ???
   dyld: false
 
 - &R_RISCV_GOT_HI20
@@ -228,7 +308,7 @@
   align: 4
   expr: LO(T + TB - P * A, 11)
   dyld: false
-    
+
 - &R_RISCV_TPREL_LO12_S
   enum: 31
   brief: Lower 12bit of 32bit offset from the value of TP register. Only used for imm in store instruction.
@@ -242,29 +322,46 @@
   size: 4
   align: 4
 
+# following 8 relocations used to calculate address to the local label.
 - &R_RISCV_ADD8
   enum: 33
+  size: 1
+  align: 1
 
 - &R_RISCV_ADD16
   enum: 34
+  size: 2
+  align: 2
 
 - &R_RISCV_ADD32
   enum: 36
+  size: 4
+  align: 4
 
 - &R_RISCV_ADD64
   enum: 36
+  size: 8
+  align: 8
 
 - &R_RISCV_SUB8
   enum: 37
+  size: 1
+  align: 1
 
 - &R_RISCV_SUB16
   enum: 38
+  size: 2
+  align: 2
 
 - &R_RISCV_SUB32
   enum: 39
+  size: 4
+  align: 4
 
 - &R_RISCV_SUB64
   enum: 40
+  size: 8
+  align: 8
 
 - &R_RISCV_GNU_VTINHERIT
   enum: 41
@@ -278,9 +375,11 @@
   enum: 43
   brief: Align the address to the nearest power of 2.
 
+# relocs for RISC-V Compressed ISA
+# At this point, FreeBSD does not support it. Really??
 - &R_RISCV_RVC_BRANCH
   enum: 44
-  brief: 8bit PC relative 
+  brief: 8bit PC relative
 
 - &R_RISCV_RVC_JUMP
   enum: 45
