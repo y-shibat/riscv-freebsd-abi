@@ -1,0 +1,13 @@
+- Elf File Header
+  -  flag
+    - &EF_RISCV_RVC
+       value: 0x1
+       brief: There may be RVC instructions in text section or segments.
+    - &EF_RISCV_SOFT_FLOAT
+       value: 0x2
+       brief: text secction or segment does not contain any FM instructions.
+
+- Special Section
+  - .comment;
+    brief: May contain toolchain information used to compile, assemble, link files.
+  
